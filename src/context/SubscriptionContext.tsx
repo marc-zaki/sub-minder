@@ -31,9 +31,12 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  
+  // Use full URL in production, relative path in dev (where proxy works)
+  const apiBase = import.meta.env.VITE_API_URL || '/api';
 
   const fetchSubscriptions = async (): Promise<Subscription[]> => {
-    const res = await fetch(`/api/subscriptions`);
+    const res = await fetch(`${apiBase}/subscriptions`);
     const data: any[] = await res.json();
     // convert date strings to Date objects and normalize _id -> id
     return data.map((s) => ({
@@ -57,7 +60,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const addSubscription = async (sub: Omit<Subscription, "id" | "status">) => {
-    await fetch(`/api/subscriptions`, {
+    await fetch(`${apiBase}/subscriptions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(sub),
@@ -66,12 +69,12 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const cancelSubscription = async (id: string) => {
-    await fetch(`/api/subscriptions/${id}/cancel`, { method: "PATCH" });
+    await fetch(`${apiBase}/subscriptions/${id}/cancel`, { method: "PATCH" });
     queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
   };
 
   const renewSubscription = async (id: string) => {
-    await fetch(`/api/subscriptions/${id}/renew`, { method: "PATCH" });
+    await fetch(`${apiBase}/subscriptions/${id}/renew`, { method: "PATCH" });
     queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
   };
 
