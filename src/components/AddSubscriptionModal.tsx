@@ -32,17 +32,21 @@ const AddSubscriptionModal = ({ open, onOpenChange }: AddSubscriptionModalProps)
     setDate(undefined);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name || !cost || !date) return;
-    addSubscription({
-      name,
-      cost: parseFloat(cost),
-      cycle,
-      nextDueDate: date,
-      category,
-    });
-    reset();
-    onOpenChange(false);
+    try {
+      await addSubscription({
+        name,
+        cost: parseFloat(cost),
+        cycle,
+        nextDueDate: date,
+        category,
+      });
+      reset();
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Failed to add subscription", err);
+    }
   };
 
   return (
@@ -57,8 +61,8 @@ const AddSubscriptionModal = ({ open, onOpenChange }: AddSubscriptionModalProps)
             <Input id="name" placeholder="e.g. Netflix" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cost">Cost ($)</Label>
-            <Input id="cost" type="number" step="0.01" placeholder="9.99" value={cost} onChange={(e) => setCost(e.target.value)} />
+            <Label htmlFor="cost">Cost (EGP)</Label>
+            <Input id="cost" type="number" step="0.01" placeholder="0.00" value={cost} onChange={(e) => setCost(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">

@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Ban, RefreshCw } from "lucide-react";
 
 const SubscriptionTable = () => {
-  const { subscriptions, cancelSubscription, renewSubscription } = useSubscriptions();
+  const { subscriptions, cancelSubscription, renewSubscription, isLoading, isError } = useSubscriptions();
   const now = new Date();
+
+  if (isLoading) return <p className="p-4 text-center">Loading subscriptions...</p>;
+  if (isError) return <p className="p-4 text-center text-red-500">Failed to load subscriptions.</p>;
 
   const sorted = [...subscriptions].sort(
     (a, b) => a.nextDueDate.getTime() - b.nextDueDate.getTime()
@@ -27,7 +30,7 @@ const SubscriptionTable = () => {
         <table className="w-full">
           <thead>
             <tr className="border-b border-border/50">
-              {["Name", "Category", "Cost", "Cycle", "Next Due", "Status", "Actions"].map((h) => (
+              {["Name", "Category", "Cost (EGP)", "Cycle", "Next Due", "Status", "Actions"].map((h) => (
                 <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   {h}
                 </th>
@@ -42,7 +45,7 @@ const SubscriptionTable = () => {
                   <span className="text-sm text-muted-foreground">{sub.category}</span>
                 </td>
                 <td className="px-5 py-4 font-mono text-sm text-foreground">
-                  ${sub.cost.toFixed(2)}
+                  EGP {sub.cost.toFixed(2)}
                 </td>
                 <td className="px-5 py-4 text-sm text-muted-foreground">{sub.cycle}</td>
                 <td className={`px-5 py-4 text-sm font-medium ${getDueDateColor(sub.nextDueDate, sub.status)}`}>
@@ -109,7 +112,7 @@ const SubscriptionTable = () => {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{sub.category} · {sub.cycle}</span>
-              <span className="font-mono text-foreground">${sub.cost.toFixed(2)}</span>
+              <span className="font-mono text-foreground">EGP {sub.cost.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className={`text-sm font-medium ${getDueDateColor(sub.nextDueDate, sub.status)}`}>

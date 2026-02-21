@@ -19,7 +19,7 @@ const SummaryCards = () => {
   const cards = [
     {
       title: "Monthly Spend",
-      value: `$${totalMonthlySpend.toFixed(2)}`,
+      value: `EGP ${totalMonthlySpend.toFixed(2)}`,
       icon: DollarSign,
       accent: "text-primary",
       bg: "bg-primary/5 neon-border border",

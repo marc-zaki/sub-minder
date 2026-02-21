@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, ReactNode } from "react";
 import { addMonths, addYears } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type BillingCycle = "Monthly" | "Yearly";
 export type Category = "Streaming" | "Software" | "Utility" | "Other";
@@ -17,6 +18,8 @@ export interface Subscription {
 
 interface SubscriptionContextType {
   subscriptions: Subscription[];
+  isLoading: boolean;
+  isError: boolean;
   addSubscription: (sub: Omit<Subscription, "id" | "status">) => void;
   cancelSubscription: (id: string) => void;
   renewSubscription: (id: string) => void;
@@ -24,73 +27,58 @@ interface SubscriptionContextType {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-const dummySubscriptions: Subscription[] = [
-  {
-    id: "1",
-    name: "Netflix",
-    cost: 15.99,
-    cycle: "Monthly",
-    nextDueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
-    category: "Streaming",
-    status: "Active",
-  },
-  {
-    id: "2",
-    name: "Spotify",
-    cost: 9.99,
-    cycle: "Monthly",
-    nextDueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days
-    category: "Streaming",
-    status: "Active",
-  },
-  {
-    id: "3",
-    name: "Adobe Creative Cloud",
-    cost: 599.88,
-    cycle: "Yearly",
-    nextDueDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000), // 45 days
-    category: "Software",
-    status: "Active",
-  },
-  {
-    id: "4",
-    name: "Electric Utility",
-    cost: 120.0,
-    cycle: "Monthly",
-    nextDueDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000), // 12 days
-    category: "Utility",
-    status: "Active",
-  },
-];
+
 
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(dummySubscriptions);
+  const queryClient = useQueryClient();
 
-  const addSubscription = (sub: Omit<Subscription, "id" | "status">) => {
-    setSubscriptions((prev) => [
-      ...prev,
-      { ...sub, id: crypto.randomUUID(), status: "Active" },
-    ]);
+  const fetchSubscriptions = async (): Promise<Subscription[]> => {
+    const res = await fetch(`/api/subscriptions`);
+    const data: any[] = await res.json();
+    // convert date strings to Date objects and normalize _id -> id
+    return data.map((s) => ({
+      id: s._id || s.id,
+      name: s.name,
+      cost: s.cost,
+      cycle: s.cycle,
+      nextDueDate: new Date(s.nextDueDate),
+      category: s.category,
+      status: s.status,
+    }));
   };
 
-  const cancelSubscription = (id: string) => {
-    setSubscriptions((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: "Cancelled" as SubStatus } : s))
-    );
+  const {
+    data: subscriptions = [],
+    isLoading,
+    isError,
+  } = useQuery<Subscription[]>({
+    queryKey: ["subscriptions"],
+    queryFn: fetchSubscriptions,
+  });
+
+  const addSubscription = async (sub: Omit<Subscription, "id" | "status">) => {
+    await fetch(`/api/subscriptions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(sub),
+    });
+    queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
   };
 
-  const renewSubscription = (id: string) => {
-    setSubscriptions((prev) =>
-      prev.map((s) => {
-        if (s.id !== id) return s;
-        const nextDate = s.cycle === "Monthly" ? addMonths(s.nextDueDate, 1) : addYears(s.nextDueDate, 1);
-        return { ...s, nextDueDate: nextDate, status: "Active" as SubStatus };
-      })
-    );
+  const cancelSubscription = async (id: string) => {
+    await fetch(`/api/subscriptions/${id}/cancel`, { method: "PATCH" });
+    queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+  };
+
+  const renewSubscription = async (id: string) => {
+    await fetch(`/api/subscriptions/${id}/renew`, { method: "PATCH" });
+    queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
   };
 
   return (
-    <SubscriptionContext.Provider value={{ subscriptions, addSubscription, cancelSubscription, renewSubscription }}>
+    <SubscriptionContext.Provider
+      value={{ subscriptions, isLoading: !!isLoading, isError: !!isError, addSubscription, cancelSubscription, renewSubscription }}
+    >
       {children}
     </SubscriptionContext.Provider>
   );
