@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       "/api": {
-        target: "http://localhost:4000",
+        target: "https://sub-minder.onrender.com",
         changeOrigin: true,
       },
     },
