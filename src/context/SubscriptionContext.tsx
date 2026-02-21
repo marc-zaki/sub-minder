@@ -36,18 +36,28 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const apiBase = "https://sub-minder.onrender.com" || '/api';
 
   const fetchSubscriptions = async (): Promise<Subscription[]> => {
-    const res = await fetch(`${apiBase}/subscriptions`);
-    const data: any[] = await res.json();
-    // convert date strings to Date objects and normalize _id -> id
-    return data.map((s) => ({
-      id: s._id || s.id,
-      name: s.name,
-      cost: s.cost,
-      cycle: s.cycle,
-      nextDueDate: new Date(s.nextDueDate),
-      category: s.category,
-      status: s.status,
-    }));
+    try {
+      console.log(`Fetching from: ${apiBase}/subscriptions`);
+      const res = await fetch(`${apiBase}/subscriptions`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      const data: any[] = await res.json();
+      console.log("Fetched subscriptions:", data);
+      // convert date strings to Date objects and normalize _id -> id
+      return data.map((s) => ({
+        id: s._id || s.id,
+        name: s.name,
+        cost: s.cost,
+        cycle: s.cycle,
+        nextDueDate: new Date(s.nextDueDate),
+        category: s.category,
+        status: s.status,
+      }));
+    } catch (err) {
+      console.error("Error fetching subscriptions:", err);
+      throw err;
+    }
   };
 
   const {
@@ -60,12 +70,22 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const addSubscription = async (sub: Omit<Subscription, "id" | "status">) => {
-    await fetch(`${apiBase}/subscriptions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(sub),
-    });
-    queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+    try {
+      console.log("Adding subscription:", sub);
+      const res = await fetch(`${apiBase}/subscriptions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub),
+      });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      console.log("Subscription added successfully");
+      queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+    } catch (err) {
+      console.error("Error adding subscription:", err);
+      throw err;
+    }
   };
 
   const cancelSubscription = async (id: string) => {
