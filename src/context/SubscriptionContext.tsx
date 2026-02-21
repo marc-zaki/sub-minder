@@ -33,7 +33,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   
   // Use full URL in production, relative path in dev (where proxy works)
-  const apiBase = "https://sub-minder.onrender.com" || '/api';
+  const apiBase = "https://sub-minder.onrender.com/api" || '/api';
 
   const fetchSubscriptions = async (): Promise<Subscription[]> => {
     try {
