@@ -9,15 +9,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({
-  origin: [
-    "https://sub-minder.vercel.app",
-    "https://sub-minder-pr9gw6ct4-marcs-projects-4f93897f.vercel.app",
-    "http://localhost:8081",
-    "http://localhost:8080",
-  ],
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json());
 
 app.use("/api/subscriptions", subscriptionsRouter);
