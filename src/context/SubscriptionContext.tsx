@@ -33,7 +33,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   
   // Use full URL in production, relative path in dev (where proxy works)
-  const apiBase = import.meta.env.VITE_API_URL || '/api';
+  const apiBase = "https://sub-minder.onrender.com" || '/api';
 
   const fetchSubscriptions = async (): Promise<Subscription[]> => {
     const res = await fetch(`${apiBase}/subscriptions`);
